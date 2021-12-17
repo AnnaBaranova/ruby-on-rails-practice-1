@@ -49,10 +49,12 @@ class User < ApplicationRecord
     remember_digest || remember
   end
 
-  def feed 
-    Micropost.where('user_id = ?', id)
+  def feed
+    part_of_feed = "relationships.follower_id = :id or microposts.user_id = :id"
+    Micropost.left_outer_joins(user: :followers)
+             .where(part_of_feed, { id: id }).distinct
+             .includes(:user, image_attachment: :blob)
   end
-
    # Follows a user.
    def follow(other_user)
     following << other_user unless self == other_user
